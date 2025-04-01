@@ -25,18 +25,14 @@ import {
   Settings2,
   SquareTerminal,
 } from "lucide-vue-next";
+import { useAuthStore } from "@/stores/auth.store";
+import { useRouter } from "vue-router";
 
 const props = withDefaults(defineProps<SidebarProps>(), {
   collapsible: "icon",
 });
 
-// This is sample data.
 const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
   teams: [
     {
       name: "Acme Inc",
@@ -159,6 +155,13 @@ const data = {
     },
   ],
 };
+const router = useRouter();
+const authStore = useAuthStore();
+
+const handleLogout = () => {
+  authStore.clearAuth();
+  router.push("/login");
+};
 </script>
 
 <template>
@@ -171,7 +174,11 @@ const data = {
       <NavProjects :projects="data.projects" />
     </SidebarContent>
     <SidebarFooter>
-      <NavUser :user="data.user" />
+      <NavUser
+        v-if="authStore.user"
+        :user="authStore.user"
+        :logout="handleLogout"
+      />
     </SidebarFooter>
     <SidebarRail />
   </Sidebar>

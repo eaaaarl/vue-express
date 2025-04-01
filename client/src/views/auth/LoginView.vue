@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import LoginView from "@/components/features/auth/login-form.vue";
+import LoginView from "@/features/auth/components/login-form.vue";
 </script>
 
 <template>

@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { AuthService } from "./core/service/auth.service";
+import { generateTokenAndSetCookie } from "../utils/generateToken";
 
 export class AuthController {
   constructor(private readonly authService: AuthService) {
@@ -12,9 +13,11 @@ export class AuthController {
       const signInPayload = req.body;
       const loggeInUser = await this.authService.signIn(signInPayload);
 
+      const getToken = generateTokenAndSetCookie(loggeInUser.id, req, res);
       res.status(200).json({
         message: "You have successfully signed in",
         user: loggeInUser,
+        accessToken: getToken.token,
       });
     } catch (error) {
       next(error);
