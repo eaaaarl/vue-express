@@ -13,11 +13,11 @@ export class AuthController {
       const signInPayload = req.body;
       const loggeInUser = await this.authService.signIn(signInPayload);
 
-      const getToken = generateTokenAndSetCookie(loggeInUser.id, req, res);
+      generateTokenAndSetCookie(loggeInUser.id, req, res);
+
       res.status(200).json({
         message: "You have successfully signed in",
         user: loggeInUser,
-        accessToken: getToken.token,
       });
     } catch (error) {
       next(error);
@@ -33,6 +33,21 @@ export class AuthController {
         message: "Congratulations, your account has been registered",
         user: newUser,
       });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async logout(req: Request, res: Response, next: NextFunction) {
+    try {
+      res.cookie("jwt", "", {
+        httpOnly: true,
+        expires: new Date(0),
+        sameSite: "strict",
+        secure: process.env.NODE_ENV !== "development",
+      });
+
+      res.status(200).json({ message: "Logged out successfully" });
     } catch (error) {
       next(error);
     }

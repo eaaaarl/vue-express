@@ -5,6 +5,7 @@ import {
 import { signInSchema } from "../../../schemas/auth/signIn.schema";
 import { signUpSchema } from "../../../schemas/auth/signUp.schema";
 import { toHashPassword, validatePassword } from "../../../utils/bcrypt";
+import { verifyToken } from "../../../utils/verifyToken";
 import { AuthRepository } from "../../auth.repository";
 import { SignInUserDto, SignUpUserDto } from "../entity/auth.entity";
 
@@ -42,5 +43,22 @@ export class AuthService {
       name: name || "",
     });
     return newUser;
+  }
+
+  async validateToken(token: string) {
+    try {
+      const decoded = verifyToken(token);
+      const user = await this.authRepository.findUserById(decoded.userId);
+      if (user) {
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+        };
+      }
+      return null;
+    } catch (error) {
+      throw new AuthenticationError("Invalid or expired token");
+    }
   }
 }

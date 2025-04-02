@@ -1,67 +1,35 @@
 import { defineStore } from "pinia";
-import type {
-  loginAuthPayload,
-  loginAuthResponse,
-  User,
-} from "./auth.interface";
+import type { loginAuthPayload, User } from "./types";
 import { authApi } from "@/features/auth/api/auth.api";
 
 export const useAuthStore = defineStore("auth", {
   state: () => ({
     isAuthenticated: false,
-    accessToken: "",
     user: null as User | null,
   }),
   actions: {
-    async establishAuth({ user, accessToken }: loginAuthResponse) {
+    async establishAuth({ user }: any) {
+      console.log("establishAuth :", user);
       this.user = Object.assign({}, user);
-      this.accessToken = accessToken;
       this.isAuthenticated = true;
-      window.localStorage.setItem("access_token", accessToken);
-      window.localStorage.setItem("user", JSON.stringify(user));
-    },
 
-    checkAuth() {
-      const storedToken = window.localStorage.getItem("access_token");
-      const storedUser = window.localStorage.getItem("user");
-
-      if (storedToken && storedUser) {
-        try {
-          const user = JSON.parse(storedUser);
-          this.user = user;
-          this.accessToken = storedToken;
-          this.isAuthenticated = true;
-          return true;
-        } catch (e) {
-          this.clearAuth();
-          return false;
-        }
-      }
-      return false;
+      console.log(this.isAuthenticated);
     },
 
     clearAuth() {
       this.user = null;
-      this.accessToken = "";
       this.isAuthenticated = false;
-      window.localStorage.removeItem("access_token");
-      window.localStorage.removeItem("user");
-    },
-
-    disabledAuth() {
-      this.clearAuth(); // Use the new clearAuth method
     },
 
     async login(payload: loginAuthPayload) {
       try {
         const response = await authApi.login(payload);
-        const { user, accessToken, message } = response;
-        this.establishAuth({ user, accessToken });
+        const { message, user } = response;
+        await this.establishAuth({ user });
         return {
           success: true,
           message: message,
           user: user,
-          accessToken: accessToken,
         };
       } catch (error) {
         if (error instanceof Error) {
@@ -76,5 +44,39 @@ export const useAuthStore = defineStore("auth", {
         };
       }
     },
+
+    async logout() {
+      try {
+        await authApi.logout();
+        this.clearAuth();
+        return { success: true };
+      } catch (error) {
+        return {
+          success: false,
+          message: error instanceof Error ? error.message : "Logout failed",
+        };
+      }
+    },
+
+    async verifyAuth() {
+      try {
+        const response = await authApi.getCurrentUser();
+
+        if (response && response.user) {
+          await this.establishAuth({ user: response.user });
+          return true;
+        }
+        return false;
+      } catch (error) {
+        console.log("verifyAuth error:", error);
+
+        if (error instanceof Error && error.message === "Not authenticated") {
+          this.clearAuth();
+        }
+
+        return false;
+      }
+    },
   },
+  persist: true,
 });

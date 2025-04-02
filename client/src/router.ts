@@ -8,13 +8,23 @@ const routes = [
     component: () => import("./views/auth/LoginView.vue"),
   },
   {
-    path: "/dashboard",
-    name: "Dashboard",
-    component: () => import("./views/dashboard/DashboardView.vue"),
-    meta: {
-      title: "Dashbaord",
-      requiresAuth: true,
-    },
+    path: "/",
+    component: () => import("./layouts/MainLayout.vue"),
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: "dashboard",
+        name: "Dashboard",
+        component: () => import("./views/dashboard/DashboardView.vue"),
+        meta: { title: "Dashboard" },
+      },
+      {
+        path: "post",
+        name: "Post",
+        component: () => import("./views/post/PostView.vue"),
+        meta: { title: "Post" },
+      },
+    ],
   },
 ];
 
@@ -29,20 +39,23 @@ router.beforeEach(async (to, _from, next) => {
     (record) => record.meta.requiresAuth
   );
 
-  let isAuthenticated = authStore.isAuthenticated;
+  // Ensure auth state is verified on protected routes
+  if (isProtectedRoute && !authStore.isAuthenticated) {
+    const isAuthVerified = await authStore.verifyAuth();
 
-  if (!isAuthenticated) {
-    isAuthenticated = authStore.checkAuth();
+    if (!isAuthVerified) {
+      return next({ name: "Login" });
+    }
   }
 
-  if (isProtectedRoute && !isAuthenticated) {
-    return next({ name: "Login" });
-  }
+  console.log("isAuthenticated:", authStore.isAuthenticated);
 
-  if (isAuthenticated && to.name === "Login") {
+  // Prevent logged-in users from accessing the login page
+  if (authStore.isAuthenticated && to.name === "Login") {
     return next({ name: "Dashboard" });
   }
 
   next();
 });
+
 export default router;

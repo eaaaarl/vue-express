@@ -43,6 +43,7 @@ const onSubmit = form.handleSubmit(async (values) => {
     email: values.email,
     password: values.password,
   });
+
   if (result?.success) {
     toast.success(result.message);
     router.push("/dashboard");

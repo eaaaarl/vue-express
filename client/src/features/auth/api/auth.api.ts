@@ -1,26 +1,17 @@
 const BASE_URL = "http://localhost:3000";
 
-interface ApiLoginResponse {
-  message: string;
-  user: {
-    id: number;
-    email: string;
-    name: string;
-  };
-  accessToken: string;
-}
-
 export const authApi = {
-  async login(payload: {
-    email: string;
-    password: string;
-  }): Promise<ApiLoginResponse> {
+  async login(payload: { email: string; password: string }): Promise<{
+    message: string;
+    user: { id: number; email: string; name?: string; password: string };
+  }> {
     const response = await fetch(`${BASE_URL}/api/auth/signin`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
+      credentials: "include",
     });
 
     if (!response.ok) {
@@ -29,8 +20,30 @@ export const authApi = {
         errResponse.message || `Login failed with status: ${response.status}`
       );
     }
+    return response.json();
+  },
 
-    const data = await response.json();
-    return data;
+  async getCurrentUser() {
+    const response = await fetch(`${BASE_URL}/api/user/profile`, {
+      credentials: "include",
+      method: "GET",
+    });
+    if (!response.ok) {
+      throw new Error("Not authenticated");
+    }
+
+    return response.json();
+  },
+
+  async logout() {
+    const response = await fetch(`${BASE_URL}/api/auth/logout`, {
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      throw new Error("Not authenticated");
+    }
+
+    return response.json();
   },
 };
